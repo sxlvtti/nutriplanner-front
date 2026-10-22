@@ -54,9 +54,24 @@ export interface PerfilAlimentario {
   categorias_evitadas: number[];
 }
 
+
+
+export interface SustitucionSeleccionada {
+  ingrediente_original_id: number;
+  ingrediente_alternativo_id: number;
+}
+
+export interface DiaMenu {
+  dia: string;
+  comidas: Partial<Record<TipoComida, number>>;
+  sustituciones?: Partial<
+    Record<TipoComida, SustitucionSeleccionada[]>
+  >;
+}
+
 export interface Menu {
   id: number;
   nombre: string;
-  creado: string; // ISO
-  dias: { dia: string; comidas: Partial<Record<TipoComida, number>> }[];
+  creado: string;
+  dias: DiaMenu[];
 }
