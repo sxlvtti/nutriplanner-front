@@ -70,16 +70,16 @@ function Menus() {
             return (
               <Card
                 key={m.id}
-                className="overflow-hidden p-6 transition-all shadow-card hover:shadow-lift"
+                className="overflow-hidden p-4 sm:p-6 transition-all shadow-card hover:shadow-lift"
               >
                 {/* Cabecera del menú */}
-                <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="space-y-2">
-                    <h2 className="text-2xl font-bold tracking-tight text-foreground">
+                <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-1.5">
+                    <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                       {m.nombre}
                     </h2>
 
-                    <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground">
                       <span className="flex items-center gap-1.5">
                         <CalendarDays className="h-4 w-4 text-primary" />
                         {m.dias.length} {m.dias.length === 1 ? "día" : "días"}
@@ -91,7 +91,7 @@ function Menus() {
                     </div>
 
                     {invalidos > 0 && (
-                      <p className="flex items-center gap-1.5 text-sm font-medium text-warning pt-1">
+                      <p className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-warning pt-1">
                         <AlertTriangle className="h-4 w-4 shrink-0" />
                         {invalidos} receta(s) ya no son compatibles con tu perfil actual.
                       </p>
@@ -99,7 +99,7 @@ function Menus() {
                   </div>
 
                   {/* Acciones del menú */}
-                  <div className="flex items-center gap-2 self-start">
+                  <div className="flex items-center gap-2 self-end sm:self-start">
                     <Button
                       variant="ghost"
                       onClick={() => navigate({ to: "/generador" })}
@@ -123,8 +123,95 @@ function Menus() {
                   </div>
                 </div>
 
-                {/* Tabla detallada con miniaturas de recetas */}
-                <div className="overflow-x-auto rounded-xl border border-border/50 bg-secondary/20">
+                {/* Vista Mobile: En columna por día (ideal para menús de varios días) */}
+                <div className="space-y-4 md:hidden">
+                  {m.dias.map((d) => {
+                    const comidasDelDia = tiposPresentes.filter(
+                      (tipo) => d.comidas[tipo] !== undefined
+                    );
+
+                    return (
+                      <div
+                        key={d.dia}
+                        className="rounded-xl border border-border/60 bg-secondary/15 p-3.5"
+                      >
+                        {/* Cabecera del día */}
+                        <div className="mb-2.5 flex items-center justify-between border-b border-border/40 pb-2">
+                          <span className="rounded-md bg-secondary px-2.5 py-1 text-xs font-bold text-foreground">
+                            {d.dia}
+                          </span>
+                          <span className="text-[11px] font-medium text-muted-foreground">
+                            {comidasDelDia.length}{" "}
+                            {comidasDelDia.length === 1 ? "comida" : "comidas"}
+                          </span>
+                        </div>
+
+                        {/* Comidas del día en columna */}
+                        <div className="space-y-2">
+                          {comidasDelDia.map((tipo) => {
+                            const id = d.comidas[tipo];
+                            const r = id
+                              ? recetas.find((x) => x.id === id)
+                              : undefined;
+
+                            if (!r) return null;
+
+                            const esApta = recetaApta(r, perfil);
+
+                            return (
+                              <Link
+                                key={tipo}
+                                to="/recetas/$id"
+                                params={{ id: String(r.id) }}
+                                className="group flex items-center gap-3 rounded-xl border border-border/50 bg-card p-2.5 shadow-xs transition-all active:scale-[0.99] hover:border-primary/40 focus:outline-none"
+                              >
+                                {/* Miniatura de la receta */}
+                                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-muted">
+                                  <img
+                                    src={r.imagen}
+                                    alt={r.nombre}
+                                    loading="lazy"
+                                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                  />
+                                  {!esApta && (
+                                    <span
+                                      className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-warning ring-2 ring-background"
+                                      title="Receta no compatible con tu perfil actual"
+                                    />
+                                  )}
+                                </div>
+
+                                {/* Info de la comida */}
+                                <div className="min-w-0 flex-1">
+                                  <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-primary">
+                                    {comidaTexto[tipo]}
+                                  </span>
+                                  <span className="block truncate text-sm font-semibold text-foreground transition-colors group-hover:text-primary">
+                                    {r.nombre}
+                                  </span>
+                                  <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                                    <span className="flex items-center gap-1">
+                                      <Clock className="h-3 w-3 text-primary/70" />
+                                      {r.tiempo_preparacion} min
+                                    </span>
+                                    {!esApta && (
+                                      <span className="text-[11px] font-medium text-warning">
+                                        · No compatible
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Vista Desktop: Tabla horizontal con miniaturas */}
+                <div className="hidden md:block overflow-x-auto rounded-xl border border-border/50 bg-secondary/20">
                   <table className="w-full min-w-[620px] text-sm">
                     <thead>
                       <tr className="border-b border-border/60 bg-secondary/50 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
