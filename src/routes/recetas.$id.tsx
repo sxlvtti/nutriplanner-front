@@ -1,4 +1,4 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { ArrowLeft, Clock, Repeat } from "lucide-react";
 import { AppLayout } from "@/components/np/AppLayout";
 import { Badge, Card, comidaTexto, nivelTexto } from "@/components/np/ui";
@@ -26,13 +26,27 @@ export const Route = createFileRoute("/recetas/$id")({
 function Detalle() {
   const { id } = Route.useParams();
   const { perfil } = useApp();
+  const router = useRouter();
+  const navigate = useNavigate();
   const r = recetas.find((x) => String(x.id) === id);
+
+  const volverAtras = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.history.back();
+    } else {
+      navigate({ to: "/recetas" });
+    }
+  };
 
   return (
     <AppLayout>
-      <Link to="/recetas" className="mb-6 inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground">
+      <button
+        type="button"
+        onClick={volverAtras}
+        className="mb-6 inline-flex items-center gap-1 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+      >
         <ArrowLeft className="h-4 w-4" /> Volver al catálogo
-      </Link>
+      </button>
       {!r ? (
         <p>Receta no encontrada.</p>
       ) : (
