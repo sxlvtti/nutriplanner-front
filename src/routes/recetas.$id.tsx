@@ -30,7 +30,16 @@ function Detalle() {
 
   return (
     <AppLayout>
-      <Link to="/recetas" className="mb-6 inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground">
+      <Link
+        to="/recetas"
+        onClick={(e) => {
+          if (typeof window !== "undefined" && window.history.length > 1) {
+            e.preventDefault();
+            window.history.back();
+          }
+        }}
+        className="mb-6 inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeft className="h-4 w-4" /> Volver al catálogo
       </Link>
       {!r ? (
