@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Leaf } from "lucide-react";
 import hero from "@/assets/receta-quinoa.jpg";
 import { Button, Input } from "@/components/np/ui";
@@ -25,8 +25,24 @@ function Acceso() {
   const [password, setPassword] = useState("");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
-  const { iniciarSesion } = useApp();
+  const { iniciarSesion, cuenta, cargandoSesion } = useApp();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!cargandoSesion && cuenta) {
+      navigate({ to: "/recetas", replace: true });
+    }
+  }, [cuenta, cargandoSesion, navigate]);
+
+  if (cargandoSesion) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-sm text-muted-foreground">
+          Recuperando sesión...
+        </p>
+      </div>
+    );
+  }
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();

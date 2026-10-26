@@ -13,13 +13,25 @@ const links = [
 ] as const;
 
 export function AppLayout({ children }: { children: ReactNode }) {
-  const { cuenta, cerrarSesion } = useApp();
+  const { cuenta, cerrarSesion, cargandoSesion } = useApp();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    if (!cuenta) navigate({ to: "/" });
-  }, [cuenta, navigate]);
+    if (!cargandoSesion && !cuenta) {
+      navigate({ to: "/" });
+    }
+  }, [cuenta, cargandoSesion, navigate]);
+
+  if (cargandoSesion) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-sm text-muted-foreground">
+          Recuperando sesión...
+        </p>
+      </div>
+    );
+  }
 
   if (!cuenta) return null;
 
