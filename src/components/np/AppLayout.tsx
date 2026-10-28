@@ -1,6 +1,6 @@
 // Estructura común de las pantallas internas: barra de navegación + contenido.
 // Si no hay sesión, redirige al inicio de sesión.
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { Leaf, LogOut, Menu as MenuIcon, X } from "lucide-react";
 import { useApp } from "@/lib/app-state";
@@ -14,14 +14,19 @@ const links = [
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { cuenta, cerrarSesion, cargandoSesion } = useApp();
+  const location = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    if (!cargandoSesion && !cuenta) {
-      navigate({ to: "/" });
+    if (cargandoSesion) return;
+
+    const tokenPresente = Boolean(sessionStorage.getItem("nutriplanner-token"));
+    if (!cuenta || !tokenPresente) {
+      cerrarSesion();
+      void navigate({ to: "/", replace: true });
     }
-  }, [cuenta, cargandoSesion, navigate]);
+  }, [cuenta, cargandoSesion, cerrarSesion, navigate, location.pathname]);
 
   if (cargandoSesion) {
     return (

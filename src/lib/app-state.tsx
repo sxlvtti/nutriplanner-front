@@ -1,7 +1,7 @@
-
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { menusIniciales } from "@/data/mock";
-import { api, setToken, USE_MOCK } from "@/services/api";
+import { api, setToken, setOnUnauthorized, USE_MOCK } from "@/services/api";
 import type { Cuenta, Menu, PerfilAlimentario } from "@/types";
 
 interface AppState {
@@ -39,6 +39,7 @@ const leer = <T,>(key: string, fallback: T): T => {
 };
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
   const [cuenta, setCuenta] = useState<Cuenta | null>(null);
   const [perfil, setPerfilState] = useState<PerfilAlimentario>(perfilVacio);
   const [menus, setMenus] = useState<Menu[]>(menusIniciales);
@@ -67,15 +68,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   // CERRAR SESIÓN
-  const cerrarSesion = () => {
+  const cerrarSesion = useCallback(() => {
     setToken(null);
-    sessionStorage.removeItem("nutriplanner-token");
+    try {
+      sessionStorage.removeItem("nutriplanner-token");
+    } catch {
+      // Ignorar si sessionStorage no está accesible
+    }
     setCuenta(null);
     setPerfilState(perfilVacio);
     setMenus([]);
     setFavoritas([]);
     setExcluidas([]);
-  };
+    void navigate({ to: "/" });
+  }, [navigate]);
+
+  // SUSCRIPCIÓN AL INTERCEPTOR DE TOKEN EXPIRADO / 401
+  useEffect(() => {
+    setOnUnauthorized(() => {
+      cerrarSesion();
+    });
+
+    return () => {
+      setOnUnauthorized(null);
+    };
+  }, [cerrarSesion]);
 
   // CARGAR DATOS SIMULADOS
   useEffect(() => {

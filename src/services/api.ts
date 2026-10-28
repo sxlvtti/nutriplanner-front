@@ -21,6 +21,13 @@ export const setToken = (nuevoToken: string | null) => {
   token = nuevoToken;
 };
 
+let onUnauthorizedCallback: (() => void) | null = null;
+let isHandlingUnauthorized = false;
+
+export const setOnUnauthorized = (callback: (() => void) | null) => {
+  onUnauthorizedCallback = callback;
+};
+
 interface TokenResponse {
   access_token: string;
   token_type: string;
@@ -81,6 +88,28 @@ async function request<T>(
     ...options,
     headers,
   });
+
+  // Interceptor de respuesta JWT: si el token expiró o no es válido (401),
+  // y no estamos en la ruta de login, limpiamos el token y derivamos al login.
+  if (response.status === 401 && !path.startsWith("/auth/token")) {
+    setToken(null);
+    try {
+      sessionStorage.removeItem("nutriplanner-token");
+    } catch {
+      // Ignorar si sessionStorage no está accesible
+    }
+
+    if (!isHandlingUnauthorized) {
+      isHandlingUnauthorized = true;
+      try {
+        onUnauthorizedCallback?.();
+      } finally {
+        setTimeout(() => {
+          isHandlingUnauthorized = false;
+        }, 1000);
+      }
+    }
+  }
 
   if (!response.ok) {
     let detalle = `Error ${response.status}`;
