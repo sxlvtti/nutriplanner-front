@@ -13,25 +13,42 @@ import {
 import { useState } from "react";
 import { AppLayout } from "@/components/np/AppLayout";
 import { RecetaPreviewModal } from "@/components/np/RecetaPreviewModal";
-import { Button, Card, Chip, PageHeader, comidaTexto, nivelTexto, } from "@/components/np/ui";
+import {
+  Button,
+  Card,
+  Chip,
+  PageHeader,
+  comidaTexto,
+  nivelTexto,
+} from "@/components/np/ui";
 import { recetas } from "@/data/mock";
 import { useApp } from "@/lib/app-state";
-import { recetaApta, ingredienteProhibido, nombreIngrediente } from "@/lib/restricciones";
+import {
+  recetaApta,
+  ingredienteProhibido,
+  nombreIngrediente,
+} from "@/lib/restricciones";
 import { cn } from "@/lib/utils";
 import type { Menu, Receta, TipoComida } from "@/types";
+
 export const Route = createFileRoute("/generador")({ component: Generador });
-const DIAS = ["Lunes", "Martes", "MiÃ©rcoles", "Jueves", "Viernes", "SÃ¡bado", "Domingo"]; const TIPOS = Object.keys(comidaTexto) as TipoComida[];
+
+const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+const TIPOS = Object.keys(comidaTexto) as TipoComida[];
+
 function Generador() {
   const { perfil, excluidas, guardarMenu } = useApp();
   const navigate = useNavigate();
 
   const [cantDias, setCantDias] = useState(3);
   const [comidas, setComidas] = useState<TipoComida[]>([
-    "DESAYUNO", "ALMUERZO", "CENA",
+    "DESAYUNO",
+    "ALMUERZO",
+    "CENA",
   ]);
 
   const [menu, setMenu] = useState<Menu["dias"] | null>(null);
-  const [nombre, setNombre] = useState("Mi menÃº semanal");
+  const [nombre, setNombre] = useState("Mi menú semanal");
   const [aviso, setAviso] = useState("");
   const [previewReceta, setPreviewReceta] = useState<{
     receta: Receta;
@@ -48,7 +65,7 @@ function Generador() {
         !excluidas.includes(r.id)
     );
 
-  // INGREDIENTES QUE NECESITAN SUSTITUCIÃ“N
+  // INGREDIENTES QUE NECESITAN SUSTITUCIÓN
   const ingredientesPendientes = (
     dia: Menu["dias"][number],
     tipo: TipoComida
@@ -73,7 +90,7 @@ function Generador() {
     });
   };
 
-  // GENERAR MENÃš
+  // GENERAR MENÚ
   const generar = () => {
     const usados = new Set<number>();
     let faltantes = false;
@@ -160,7 +177,7 @@ function Generador() {
     setAviso("");
   };
 
-  // CONFIRMAR SUSTITUCIÃ“N EXPLÃCITA
+  // CONFIRMAR SUSTITUCIÓN EXPLÍCITA
   const confirmarSustitucion = (
     dia: string,
     tipo: TipoComida,
@@ -233,12 +250,12 @@ function Generador() {
       )
     : false;
 
-  // GUARDAR SOLAMENTE SI ESTÃ COMPLETO
+  // GUARDAR SOLAMENTE SI ESTÁ COMPLETO
   const guardar = () => {
     if (!menu || pendientes > 0 || faltanRecetas) return;
 
     guardarMenu({
-      nombre: nombre.trim() || "MenÃº sin nombre",
+      nombre: nombre.trim() || "Menú sin nombre",
       dias: menu,
     });
 
@@ -248,24 +265,22 @@ function Generador() {
   return (
     <AppLayout>
       <PageHeader
-        title="Generar menÃº"
-        subtitle="ElegÃ­ entre 1 y 7 dÃ­as y las comidas que querÃ©s incluir."
+        title="Generar menú"
+        subtitle="Elegí entre 1 y 7 días y las comidas que querés incluir."
       />
 
       <div className="space-y-8">
-
-        {/* CONFIGURACIÃ“N */}
+        {/* CONFIGURACIÓN */}
         <Card className="p-5 shadow-card">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-
-            {/* Selector de cantidad de dÃ­as */}
+            {/* Selector de cantidad de días */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  DÃ­as a planificar
+                  Días a planificar
                 </span>
                 <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
-                  {cantDias} {cantDias === 1 ? "dÃ­a" : "dÃ­as"}
+                  {cantDias} {cantDias === 1 ? "día" : "días"}
                 </span>
               </div>
 
@@ -319,7 +334,7 @@ function Generador() {
               </div>
             </div>
 
-            {/* BotÃ³n para generar */}
+            {/* Botón para generar */}
             <div className="flex items-center pt-2 lg:pt-0">
               <Button
                 onClick={generar}
@@ -331,16 +346,13 @@ function Generador() {
                 ) : (
                   <Sparkles className="h-4 w-4" />
                 )}
-                {menu ? "Volver a generar" : "Generar menÃº"}
+                {menu ? "Volver a generar" : "Generar menú"}
               </Button>
             </div>
-
           </div>
         </Card>
 
-
-
-        {/* MENÃš GENERADO */}
+        {/* MENÚ GENERADO */}
         <div>
           {aviso && (
             <div className="mb-4 rounded-xl bg-warning-soft px-4 py-3 text-sm text-warning">
@@ -350,7 +362,7 @@ function Generador() {
 
           {!menu ? (
             <div className="grid min-h-64 place-items-center rounded-2xl border border-dashed text-center text-muted-foreground">
-              ConfigurÃ¡ las opciones y generÃ¡ tu menÃº.
+              Configurá las opciones y generá tu menú.
             </div>
           ) : (
             <>
@@ -373,7 +385,7 @@ function Generador() {
                           </h2>
 
                           <p className="text-xs text-muted-foreground">
-                            DÃ­a {index + 1} de {menu.length}
+                            Día {index + 1} de {menu.length}
                           </p>
                         </div>
                       </div>
@@ -412,7 +424,7 @@ function Generador() {
 
                             {receta ? (
                               <>
-                                                              <button
+                                <button
                                   type="button"
                                   onClick={() =>
                                     setPreviewReceta({
@@ -438,126 +450,131 @@ function Generador() {
                                     </span>
                                   </div>
                                 </button>
-                                <div className="space-y-2 px-4 pt-4">
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setPreviewReceta({
-                                        receta,
-                                        dia: dia.dia,
-                                        tipo,
-                                      })
-                                    }
-                                    className="line-clamp-2 block text-left font-display text-base font-semibold leading-snug text-foreground transition-colors hover:text-primary"
-                                  >
-                                    {receta.nombre}
-                                  </button>
 
-                                  <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                                    <span className="inline-flex items-center gap-1">
-                                      <Clock className="h-3.5 w-3.5 text-primary" />
-                                      {receta.tiempo_preparacion} min
-                                    </span>
-
-                                    {receta.info_nutricional && (
-                                      <span className="truncate">
-                                        {receta.info_nutricional.split("Â·")[0]}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-
-
-
-                                {pendientesComida.length > 0 ? (
-                                  <div className="mt-3 space-y-3">
-                                    <div className="flex items-center gap-1 text-xs text-warning">
-                                      <AlertTriangle className="h-4 w-4" />
-                                      SustituciÃ³n pendiente
-                                    </div>
-
-                                    {pendientesComida.map((ri) => (
-                                      <div
-                                        key={ri.ingrediente_id}
-                                        className="rounded-lg border bg-card p-2 text-xs"
+                                <div className="flex flex-1 flex-col justify-between p-4">
+                                  <div className="space-y-3">
+                                    <div className="space-y-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setPreviewReceta({
+                                            receta,
+                                            dia: dia.dia,
+                                            tipo,
+                                          })
+                                        }
+                                        className="line-clamp-2 block text-left font-display text-base font-semibold leading-snug text-foreground transition-colors hover:text-primary"
                                       >
-                                        <p className="font-medium">
-                                          {nombreIngrediente(ri.ingrediente_id)}
-                                        </p>
+                                        {receta.nombre}
+                                      </button>
 
-                                        {ri.sustituto_id != null &&
-                                        !ingredienteProhibido(
-                                          ri.sustituto_id,
-                                          perfil
-                                        ) ? (
-                                          <>
-                                            <p className="mt-1 text-muted-foreground">
-                                              Alternativa:{" "}
-                                              {nombreIngrediente(
-                                                ri.sustituto_id
-                                              )}
-                                            </p>
+                                      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                                        <span className="inline-flex items-center gap-1">
+                                          <Clock className="h-3.5 w-3.5 text-primary" />
+                                          {receta.tiempo_preparacion} min
+                                        </span>
 
-                                            <button
-                                              type="button"
-                                              onClick={() =>
-                                                confirmarSustitucion(
-                                                  dia.dia,
-                                                  tipo,
-                                                  ri.ingrediente_id,
-                                                  ri.sustituto_id!
-                                                )
-                                              }
-                                              className="mt-2 rounded-full bg-primary px-3 py-1.5 font-medium text-primary-foreground"
-                                            >
-                                              Confirmar sustituciÃ³n
-                                            </button>
-                                          </>
-                                        ) : (
-                                          <p className="mt-1 text-destructive">
-                                            No hay alternativa compatible.
-                                          </p>
+                                        {receta.info_nutricional && (
+                                          <span className="truncate">
+                                            {receta.info_nutricional.split("·")[0]}
+                                          </span>
                                         )}
                                       </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <div className="mt-2 flex items-center gap-1 text-xs text-primary">
-                                    <CheckCircle className="h-3.5 w-3.5" />
-                                    Sin sustituciones pendientes
-                                  </div>
-                                )}
+                                    </div>
 
-                                <div className="mx-4 mb-4 mt-auto grid grid-cols-2 gap-2 border-t border-border/50 pt-3">
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setPreviewReceta({
-                                        receta,
-                                        dia: dia.dia,
-                                        tipo,
-                                      })
-                                    }
-                                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-input bg-background px-2.5 py-2 text-xs font-semibold text-foreground transition-all hover:border-primary hover:bg-primary-soft hover:text-primary"
-                                  >
-                                    <Eye className="h-3.5 w-3.5 text-primary" />
-                                    Ver receta
-                                  </button>
+                                    {pendientesComida.length > 0 ? (
+                                      <div className="space-y-2 rounded-xl border border-warning/30 bg-warning/5 p-2.5">
+                                        <div className="flex items-center gap-1.5 text-xs font-semibold text-warning">
+                                          <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                                          <span>Sustitución pendiente</span>
+                                        </div>
 
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      reemplazar(dia.dia, tipo)
-                                    }
-                                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-input bg-background px-2.5 py-2 text-xs font-semibold text-foreground transition-all hover:border-primary hover:bg-primary-soft hover:text-primary"
-                                  >
-                                    <Shuffle className="h-3.5 w-3.5" />
-                                    Reemplazar
-                                  </button>
+                                        {pendientesComida.map((ri) => (
+                                          <div
+                                            key={ri.ingrediente_id}
+                                            className="rounded-lg border border-border/60 bg-card p-2 text-xs"
+                                          >
+                                            <p className="font-medium text-foreground">
+                                              {nombreIngrediente(ri.ingrediente_id)}
+                                            </p>
+
+                                            {ri.sustituto_id != null &&
+                                            !ingredienteProhibido(
+                                              ri.sustituto_id,
+                                              perfil
+                                            ) ? (
+                                              <>
+                                                <p className="mt-1 text-muted-foreground">
+                                                  Alternativa:{" "}
+                                                  <span className="font-medium text-foreground">
+                                                    {nombreIngrediente(
+                                                      ri.sustituto_id
+                                                    )}
+                                                  </span>
+                                                </p>
+
+                                                <button
+                                                  type="button"
+                                                  onClick={() =>
+                                                    confirmarSustitucion(
+                                                      dia.dia,
+                                                      tipo,
+                                                      ri.ingrediente_id,
+                                                      ri.sustituto_id!
+                                                    )
+                                                  }
+                                                  className="mt-2 rounded-lg bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground transition hover:opacity-90"
+                                                >
+                                                  Confirmar sustitución
+                                                </button>
+                                              </>
+                                            ) : (
+                                              <p className="mt-1 text-destructive">
+                                                No hay alternativa compatible.
+                                              </p>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                                        <CheckCircle className="h-3.5 w-3.5 shrink-0" />
+                                        <span>Sin sustituciones pendientes</span>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border/50 pt-3">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setPreviewReceta({
+                                          receta,
+                                          dia: dia.dia,
+                                          tipo,
+                                        })
+                                      }
+                                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-input bg-background px-2.5 py-2 text-xs font-semibold text-foreground transition-all hover:border-primary hover:bg-primary-soft hover:text-primary"
+                                    >
+                                      <Eye className="h-3.5 w-3.5 text-primary" />
+                                      Ver receta
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        reemplazar(dia.dia, tipo)
+                                      }
+                                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-input bg-background px-2.5 py-2 text-xs font-semibold text-foreground transition-all hover:border-primary hover:bg-primary-soft hover:text-primary"
+                                    >
+                                      <Shuffle className="h-3.5 w-3.5" />
+                                      Reemplazar
+                                    </button>
+                                  </div>
                                 </div>
                               </>
                             ) : (
-                              <div className="mt-1 text-sm text-muted-foreground">
+                              <div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-muted-foreground">
                                 Sin recetas aptas
                               </div>
                             )}
@@ -568,41 +585,40 @@ function Generador() {
                   </Card>
                 ))}
               </div>
-              {/* GUARDAR MENÃš */}
-              <Card className="mt-6 space-y-4 p-5 shadow-card">
 
-                {/* Advertencias de validaciÃ³n */}
+              {/* GUARDAR MENÚ */}
+              <Card className="mt-6 space-y-4 p-5 shadow-card">
+                {/* Advertencias de validación */}
                 {pendientes > 0 && (
                   <p className="flex items-center gap-2 text-sm text-warning">
                     <AlertTriangle className="h-4 w-4 shrink-0" />
-                    TenÃ©s {pendientes} sustituciÃ³n(es) pendiente(s).
-                    Confirmalas antes de guardar el menÃº.
+                    Tenés {pendientes} sustitución(es) pendiente(s).
+                    Confirmalas antes de guardar el menú.
                   </p>
                 )}
 
                 {faltanRecetas && (
                   <p className="flex items-center gap-2 text-sm text-warning">
                     <AlertTriangle className="h-4 w-4 shrink-0" />
-                    El menÃº tiene comidas sin receta asignada.
+                    El menú tiene comidas sin receta asignada.
                   </p>
                 )}
 
                 {/* Barra inferior de guardado */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-
                   <div className="flex-1 space-y-2">
                     <label
                       htmlFor="nombre-menu"
                       className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                     >
-                      Nombre del menÃº
+                      Nombre del menú
                     </label>
 
                     <input
                       id="nombre-menu"
                       value={nombre}
                       onChange={(e) => setNombre(e.target.value)}
-                      placeholder="Ej: Mi menÃº semanal saludable"
+                      placeholder="Ej: Mi menú semanal saludable"
                       className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm font-medium outline-none transition focus:border-primary focus:ring-2 focus:ring-ring"
                     />
                   </div>
@@ -613,16 +629,15 @@ function Generador() {
                     className="w-full shadow-sm sm:w-auto"
                   >
                     <Save className="h-4 w-4" />
-                    Guardar menÃº
+                    Guardar menú
                   </Button>
-
                 </div>
               </Card>
-
             </>
           )}
         </div>
       </div>
+
       <RecetaPreviewModal
         receta={previewReceta?.receta ?? null}
         dia={previewReceta?.dia}
