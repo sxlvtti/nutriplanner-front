@@ -27,7 +27,7 @@ function Perfil() {
         <PageHeader title="Mi perfil" subtitle="Tus preferencias se aplican a recetas y menús." />
         <Card className="mb-6 flex items-center gap-4">
           <div className="grid h-14 w-14 place-items-center rounded-full bg-primary-soft font-display text-xl font-semibold text-primary">
-            {cuenta?.nombre_usuario.charAt(0).toUpperCase()}
+            {cuenta?.nombre_usuario?.charAt(0)?.toUpperCase() ?? ""}
           </div>
           <div>
             <div className="font-semibold">{cuenta?.nombre_usuario}</div>
