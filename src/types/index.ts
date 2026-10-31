@@ -44,7 +44,7 @@ export interface Receta {
   activa: boolean;
   tipos_comida: TipoComida[];
   ingredientes: RecetaIngrediente[];
-  imagen: string; // solo frontend
+  imagen?: string; // si la API no la provee, el frontend asigna una imagen de respaldo
 }
 
 export interface PerfilAlimentario {

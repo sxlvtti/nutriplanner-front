@@ -1,13 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { RotateCcw, Search, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertCircle, RotateCcw, Search, WifiOff, X } from "lucide-react";
 import { AppLayout } from "@/components/np/AppLayout";
 import { RecetaCard } from "@/components/np/RecetaCard";
-import { Chip, PageHeader, comidaTexto, nivelTexto } from "@/components/np/ui";
-import { recetas } from "@/data/mock";
+import { Button, Chip, PageHeader, comidaTexto, nivelTexto } from "@/components/np/ui";
+import { api, ApiError, getErrorMessage } from "@/services/api";
 import { useApp } from "@/lib/app-state";
 import { estadoReceta } from "@/lib/restricciones";
-import type { NivelDificultad, TipoComida } from "@/types";
+import type { NivelDificultad, Receta, TipoComida } from "@/types";
 
 export type EstadoFiltro = "TODAS" | "COMPATIBLE" | "SUSTITUCION" | "NO_DISPONIBLE";
 
@@ -62,7 +62,36 @@ function Catalogo() {
   const search = Route.useSearch();
   const navigate = useNavigate();
 
+  const [recetas, setRecetas] = useState<Receta[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [esErrorRed, setEsErrorRed] = useState(false);
   const [searchInput, setSearchInput] = useState(search.q ?? "");
+
+  const cargarRecetas = useCallback(async () => {
+    setCargando(true);
+    setError(null);
+    setEsErrorRed(false);
+
+    try {
+      const datos = await api.getRecetas();
+      setRecetas(datos);
+    } catch (err) {
+      const esRed = err instanceof ApiError ? err.isNetworkError : false;
+      const mensaje = getErrorMessage(
+        err,
+        "No se pudieron cargar las recetas del servidor. Comprobá tu conexión."
+      );
+      setEsErrorRed(esRed);
+      setError(mensaje);
+    } finally {
+      setCargando(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void cargarRecetas();
+  }, [cargarRecetas]);
 
   // Sincronizar el input si los search params cambian externamente (ej: botón atrás del navegador)
   useEffect(() => {
@@ -142,13 +171,17 @@ function Catalogo() {
         (!soloFavoritas || favoritas.includes(r.id)) &&
         !excluidas.includes(r.id)
     );
-  }, [searchInput, tipo, nivel, estado, soloFavoritas, perfil, favoritas, excluidas]);
+  }, [recetas, searchInput, tipo, nivel, estado, soloFavoritas, perfil, favoritas, excluidas]);
 
   return (
     <AppLayout>
       <PageHeader
         title="Recetas"
-        subtitle={`${lista.length} ${lista.length === 1 ? "receta encontrada" : "recetas encontradas"}`}
+        subtitle={
+          cargando
+            ? "Cargando recetas del servidor…"
+            : `${lista.length} ${lista.length === 1 ? "receta encontrada" : "recetas encontradas"}`
+        }
       >
         {hayFiltrosActivos && (
           <button
@@ -167,6 +200,37 @@ function Catalogo() {
           </button>
         )}
       </PageHeader>
+
+      {error && (
+        <div
+          role="alert"
+          className="mb-6 flex flex-col gap-3 rounded-2xl border border-destructive/20 bg-destructive/10 p-4 text-destructive sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex items-start gap-3">
+            {esErrorRed ? (
+              <WifiOff className="mt-0.5 h-5 w-5 shrink-0" />
+            ) : (
+              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+            )}
+            <div className="space-y-0.5">
+              <p className="text-xs font-semibold uppercase tracking-wider">
+                Error al cargar recetas
+              </p>
+              <p className="text-sm text-destructive/90">{error}</p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => void cargarRecetas()}
+            className="gap-1.5 self-start sm:self-center"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Reintentar
+          </Button>
+        </div>
+      )}
 
       <div className="mb-8 space-y-4 rounded-2xl border bg-card p-4 shadow-card">
         {/* Campo de búsqueda con botón de limpieza inmediata */}
@@ -271,7 +335,26 @@ function Catalogo() {
         </div>
       </div>
 
-      {lista.length ? (
+      {cargando ? (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="overflow-hidden rounded-2xl border bg-card shadow-card animate-pulse"
+            >
+              <div className="aspect-[4/3] bg-muted/60" />
+              <div className="space-y-3 p-4">
+                <div className="h-5 w-3/4 rounded-md bg-muted/70" />
+                <div className="h-4 w-1/2 rounded-md bg-muted/50" />
+                <div className="flex gap-2 pt-2">
+                  <div className="h-5 w-16 rounded-full bg-muted/60" />
+                  <div className="h-5 w-16 rounded-full bg-muted/60" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : lista.length ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {lista.map((r) => (
             <RecetaCard key={r.id} receta={r} />
@@ -279,8 +362,10 @@ function Catalogo() {
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed bg-card/40 py-16 text-center">
-          <p className="text-muted-foreground">No hay recetas con esos filtros.</p>
-          {hayFiltrosActivos && (
+          <p className="text-muted-foreground">
+            {error ? "No se pudieron mostrar recetas debido al error anterior." : "No hay recetas con esos filtros."}
+          </p>
+          {hayFiltrosActivos && !error && (
             <button
               type="button"
               onClick={resetFilters}

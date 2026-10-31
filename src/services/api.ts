@@ -3,6 +3,10 @@
 // Mientras USE_MOCK sea true, las funciones devuelven datos de ejemplo.
 
 import * as mock from "@/data/mock";
+import quinoa from "@/assets/receta-quinoa.jpg";
+import avena from "@/assets/receta-avena.jpg";
+import salmon from "@/assets/receta-salmon.jpg";
+import sopa from "@/assets/receta-sopa.jpg";
 import type {
   Cuenta,
   PerfilAlimentario,
@@ -11,6 +15,35 @@ import type {
   CategoriaAlimento,
   Ingrediente,
 } from "@/types";
+
+export const IMAGENES_FALLBACK = [quinoa, avena, salmon, sopa];
+
+/**
+ * Asegura que una receta proveniente del backend tenga todos los campos requeridos
+ * y una imagen válida asignada si el backend no proporciona una.
+ */
+export function normalizarReceta(
+  r: Partial<Receta> & { id: number },
+  index = 0
+): Receta {
+  const fallbackImg =
+    IMAGENES_FALLBACK[Math.abs(r.id || index) % IMAGENES_FALLBACK.length] ?? quinoa;
+
+  return {
+    id: Number(r.id),
+    nombre: r.nombre || "Receta sin nombre",
+    pasos: r.pasos || "",
+    tiempo_preparacion:
+      typeof r.tiempo_preparacion === "number" ? r.tiempo_preparacion : 20,
+    dificultad: r.dificultad || "PRINCIPIANTE",
+    info_nutricional: r.info_nutricional ?? null,
+    activa: r.activa ?? true,
+    tipos_comida: Array.isArray(r.tipos_comida) ? r.tipos_comida : [],
+    ingredientes: Array.isArray(r.ingredientes) ? r.ingredientes : [],
+    imagen:
+      r.imagen && r.imagen.trim().length > 0 ? r.imagen : fallbackImg,
+  };
+}
 
 
 export const API_URL = import.meta.env["VITE_API_URL"] ?? "http://localhost:8000";
@@ -553,9 +586,26 @@ export const api = {
       ? delay(mock.ingredientes)
       : request<Ingrediente[]>("/ingredientes"),
 
-  // RECETAS: por ahora continúa con datos simulados.
-  getRecetas: () =>
-    USE_MOCK
-      ? delay(mock.recetas)
-      : request<Receta[]>("/recetas"),
+  // RECETAS: integración con endpoints FastAPI GET /recetas y GET /recetas/{id}
+  getRecetas: async (): Promise<Receta[]> => {
+    if (USE_MOCK) return delay(mock.recetas);
+    const datos = await request<Receta[]>("/recetas");
+    return Array.isArray(datos) ? datos.map((r, i) => normalizarReceta(r, i)) : [];
+  },
+
+  getReceta: async (id: number | string): Promise<Receta> => {
+    if (USE_MOCK) {
+      const encontrada = mock.recetas.find((x) => String(x.id) === String(id));
+      if (!encontrada) {
+        throw new ApiError({
+          status: 404,
+          message: "Receta no encontrada",
+          code: "NOT_FOUND",
+        });
+      }
+      return delay(encontrada);
+    }
+    const datos = await request<Receta>(`/recetas/${id}`);
+    return normalizarReceta(datos);
+  },
 };
