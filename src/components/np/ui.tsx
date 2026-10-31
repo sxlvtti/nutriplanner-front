@@ -4,6 +4,8 @@ import { cn } from "@/lib/utils";
 import type { NivelDificultad, TipoComida } from "@/types";
 
 type Variant = "primary" | "outline" | "ghost" | "danger";
+type Size = "default" | "sm" | "lg";
+
 const variants: Record<Variant, string> = {
   primary: "bg-primary text-primary-foreground hover:opacity-90 shadow-card",
   outline: "border border-input bg-card text-foreground hover:bg-secondary",
@@ -11,16 +13,24 @@ const variants: Record<Variant, string> = {
   danger: "text-destructive hover:bg-destructive/10",
 };
 
+const sizes: Record<Size, string> = {
+  default: "px-5 py-2.5 text-sm",
+  sm: "px-3 py-1.5 text-xs",
+  lg: "px-6 py-3 text-base",
+};
+
 export function Button({
   variant = "primary",
+  size = "default",
   className,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; size?: Size }) {
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition disabled:opacity-50",
+        "inline-flex items-center justify-center gap-2 rounded-full font-semibold transition disabled:opacity-50",
         variants[variant],
+        sizes[size],
         className,
       )}
       {...props}

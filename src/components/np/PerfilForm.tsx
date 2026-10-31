@@ -1,6 +1,8 @@
 // Formulario de perfil alimentario, usado en el onboarding y en "Perfil".
-import { useEffect, useState } from "react";
-import { api } from "@/services/api";
+import { useCallback, useEffect, useState } from "react";
+import { AlertCircle, RotateCcw, WifiOff } from "lucide-react";
+import { toast } from "sonner";
+import { api, ApiError, getErrorMessage } from "@/services/api";
 import type { Alergia, CategoriaAlimento, Ingrediente, NivelDificultad, PerfilAlimentario } from "@/types";
 import { Button, Card, Chip, nivelTexto } from "./ui";
 
@@ -17,7 +19,9 @@ export function PerfilForm({
 }) {
   const [p, setP] = useState(inicial);
   const [guardando, setGuardando] = useState(false);
-  const [error, setError] = useState("");
+  const [errorCatalogo, setErrorCatalogo] = useState<string | null>(null);
+  const [esErrorRed, setEsErrorRed] = useState(false);
+  const [errorGuardar, setErrorGuardar] = useState<string | null>(null);
   const [alergias, setAlergias] = useState<Alergia[]>([]);
   const [categorias, setCategorias] = useState<CategoriaAlimento[]>([]);
   const [ingredientes, setIngredientes] = useState<Ingrediente[]>([]);
@@ -27,59 +31,56 @@ export function PerfilForm({
     setP(inicial);
   }, [inicial]);
 
-    useEffect(() => {
-    let activo = true;
+  const cargarCatalogos = useCallback(async () => {
+    setCargandoCatalogos(true);
+    setErrorCatalogo(null);
+    setEsErrorRed(false);
 
-    const cargarCatalogos = async () => {
-      setCargandoCatalogos(true);
+    try {
+      const [datosAlergias, datosCategorias, datosIngredientes] =
+        await Promise.all([
+          api.getAlergias(),
+          api.getCategorias(),
+          api.getIngredientes(),
+        ]);
 
-      try {
-        const [datosAlergias, datosCategorias, datosIngredientes] =
-          await Promise.all([
-            api.getAlergias(),
-            api.getCategorias(),
-            api.getIngredientes(),
-          ]);
-
-        if (activo) {
-          setAlergias(datosAlergias);
-          setCategorias(datosCategorias);
-          setIngredientes(datosIngredientes);
-        }
-      } catch (err) {
-        if (activo) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "No se pudieron cargar los catálogos."
-          );
-        }
-      } finally {
-        if (activo) setCargandoCatalogos(false);
-      }
-    };
-
-    void cargarCatalogos();
-
-    return () => {
-      activo = false;
-    };
+      setAlergias(datosAlergias);
+      setCategorias(datosCategorias);
+      setIngredientes(datosIngredientes);
+    } catch (err) {
+      const esRed = err instanceof ApiError ? err.isNetworkError : false;
+      const mensaje = getErrorMessage(
+        err,
+        "No se pudieron cargar los catálogos del servidor. Comprobá tu conexión."
+      );
+      setEsErrorRed(esRed);
+      setErrorCatalogo(mensaje);
+      toast.error(mensaje, { id: "catalogo-error" });
+    } finally {
+      setCargandoCatalogos(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void cargarCatalogos();
+  }, [cargarCatalogos]);
 
   const submit = async () => {
     if (guardando || cargandoCatalogos) return;
 
     setGuardando(true);
-    setError("");
+    setErrorGuardar(null);
 
     try {
       await onGuardar(p);
+      toast.success("Perfil guardado con éxito.", { id: "perfil-guardado" });
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "No se pudo guardar el perfil. Intentá nuevamente."
+      const mensaje = getErrorMessage(
+        err,
+        "No se pudo guardar el perfil. Intentá nuevamente."
       );
+      setErrorGuardar(mensaje);
+      toast.error(mensaje, { id: "perfil-error" });
     } finally {
       setGuardando(false);
     }
@@ -143,15 +144,55 @@ export function PerfilForm({
       </Card>
 
       <div className="space-y-3">
-        {error && (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
+        {errorCatalogo && (
+          <div
+            role="alert"
+            className="flex flex-col gap-3 rounded-2xl border border-destructive/20 bg-destructive/10 p-4 text-destructive sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div className="flex items-start gap-3">
+              {esErrorRed ? (
+                <WifiOff className="mt-0.5 h-5 w-5 shrink-0" />
+              ) : (
+                <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+              )}
+              <div className="space-y-0.5">
+                <p className="text-xs font-semibold uppercase tracking-wider">
+                  No se pudieron cargar las opciones
+                </p>
+                <p className="text-sm text-destructive/90">{errorCatalogo}</p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void cargarCatalogos()}
+              className="gap-1.5 self-start sm:self-center"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Reintentar
+            </Button>
+          </div>
         )}
+
+        {errorGuardar && (
+          <div
+            role="alert"
+            className="rounded-2xl border border-destructive/20 bg-destructive/10 p-3.5 text-destructive"
+          >
+            <div className="flex items-start gap-3">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div className="space-y-0.5">
+                <p className="text-xs font-semibold uppercase tracking-wider">Error al guardar</p>
+                <p className="text-sm text-destructive/90">{errorGuardar}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex justify-end">
-          <Button onClick={submit} disabled={guardando || cargandoCatalogos || Boolean(error)}>
+          <Button onClick={submit} disabled={guardando || cargandoCatalogos}>
             {cargandoCatalogos ? "Cargando opciones..." : guardando ? "Guardando..." : textoBoton}
-            
           </Button>
         </div>
       </div>

@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { menusIniciales } from "@/data/mock";
-import { api, setToken, setOnUnauthorized, USE_MOCK } from "@/services/api";
+import { api, setToken, setOnUnauthorized, ApiError, USE_MOCK } from "@/services/api";
 import type { Cuenta, Menu, PerfilAlimentario } from "@/types";
 
 interface AppState {
@@ -184,8 +185,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
         console.error("No se pudo recuperar la sesión:", err);
 
         if (activo) {
-          setToken(null);
-          sessionStorage.removeItem("nutriplanner-token");
+          if (err instanceof ApiError && err.isNetworkError) {
+            toast.error(
+              "No se pudo conectar con el servidor para sincronizar tu sesión.",
+              { id: "session-network-error" }
+            );
+          } else {
+            setToken(null);
+            try {
+              sessionStorage.removeItem("nutriplanner-token");
+            } catch {
+              // Ignorar
+            }
+          }
           setCuenta(null);
           setPerfilState(perfilVacio);
         }
