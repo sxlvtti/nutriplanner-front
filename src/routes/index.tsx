@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { Leaf, AlertCircle, WifiOff, MailCheck } from "lucide-react";
 import { toast } from "sonner";
-import hero from "@/assets/receta-quinoa.jpg";
+import hero from "@/assets/recetas/ensalada-de-garbanzos.webp";
 import { Button, Input } from "@/components/np/ui";
 import { useApp } from "@/lib/app-state";
 import { api, ApiError, getErrorMessage, USE_MOCK } from "@/services/api";

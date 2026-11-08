@@ -12,13 +12,30 @@ const DIAS = [
   "Domingo",
 ];
 
+function obtenerNombreDia(fechaInicio: string, desplazamiento: number): string {
+  const [anio = 2026, mes = 1, dia = 1] = fechaInicio
+    .split("-")
+    .map(Number);
+
+  const fecha = new Date(anio, mes - 1, dia);
+  fecha.setDate(fecha.getDate() + desplazamiento);
+
+  const nombre = fecha.toLocaleDateString("es-AR", {
+    weekday: "long",
+  });
+
+  return nombre.charAt(0).toUpperCase() + nombre.slice(1);
+}
+
 export function convertirMenuBackend(
   datos: MenuGuardadoDetalle
 ): Menu {
   const dias: Menu["dias"] = Array.from(
     { length: datos.cantidad_dias },
     (_, indice) => ({
-      dia: DIAS[indice] ?? `Día ${indice + 1}`,
+      dia: datos.fecha_inicio
+        ? obtenerNombreDia(datos.fecha_inicio, indice)
+        : `Día ${indice + 1}`,
       comidas: {},
       sustituciones: {},
       instantaneas: {},

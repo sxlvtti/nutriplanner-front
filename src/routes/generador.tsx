@@ -40,6 +40,23 @@ import type {
 export const Route = createFileRoute("/generador")({ component: Generador });
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+
+function obtenerDiasConsecutivos(
+  cantidad: number,
+  fechaInicio: Date = new Date()
+): string[] {
+  return Array.from({ length: cantidad }, (_, indice) => {
+    const fecha = new Date(fechaInicio);
+    fecha.setDate(fechaInicio.getDate() + indice);
+
+    const nombreDia = fecha.toLocaleDateString("es-AR", {
+      weekday: "long",
+    });
+
+    return nombreDia.charAt(0).toUpperCase() + nombreDia.slice(1);
+  });
+}
+
 const TIPOS = Object.keys(comidaTexto) as TipoComida[];
 
 function Generador() {
@@ -54,6 +71,7 @@ function Generador() {
   ]);
 
   const [menu, setMenu] = useState<Menu["dias"] | null>(null);
+  const [fechaInicio, setFechaInicio] = useState<string | null>(null);
   const [nombre, setNombre] = useState("Mi menú semanal");
   const [aviso, setAviso] = useState("");
   const [previewReceta, setPreviewReceta] = useState<{
@@ -132,11 +150,21 @@ function Generador() {
     setGenerando(true);
     setAviso("");
     setMenu(null);
+    setFechaInicio(null);
     setPreviewReceta(null);
     setAlertasAPI({});
     setCambiosLocalesSinValidar(false);
 
     try {
+      // Obtener la fecha de inicio del menú
+      const hoy = new Date();
+
+      const fechaLocal = [
+        hoy.getFullYear(),
+        String(hoy.getMonth() + 1).padStart(2, "0"),
+        String(hoy.getDate()).padStart(2, "0"),
+      ].join("-");
+
       // 1. Solicitar el menú al backend
       const propuesta = await api.generarMenu({
         cantidad_dias: cantDias,
@@ -196,7 +224,9 @@ function Generador() {
         ? Math.min(...propuesta.comidas.map((comida) => comida.dia))
         : 1;
 
-      const dias: Menu["dias"] = DIAS.slice(0, cantDias).map(
+      const diasGenerados = obtenerDiasConsecutivos(cantDias, hoy);
+
+      const dias: Menu["dias"] = diasGenerados.map(
         (dia, indice) => {
           const asignadas: Menu["dias"][number]["comidas"] = {};
 
@@ -220,7 +250,7 @@ function Generador() {
       const nuevasAlertas: typeof alertasAPI = {};
 
       propuesta.comidas.forEach((comida) => {
-        const dia = DIAS[comida.dia - primerDia];
+        const dia = diasGenerados[comida.dia - primerDia];
 
         if (!dia) return;
 
@@ -231,6 +261,7 @@ function Generador() {
       });
 
       setAlertasAPI(nuevasAlertas);
+      setFechaInicio(fechaLocal);
       setMenu(dias);
 
       // 5. Mostrar advertencias cuando corresponda
@@ -384,7 +415,7 @@ function Generador() {
 
   // GUARDAR MENÚ Y SUS SUSTITUCIONES EN FASTAPI
   const guardar = async () => {
-    if (!menu || faltanRecetas || guardando) {
+    if (!menu || !fechaInicio || faltanRecetas || guardando) {
       return;
     }
 
@@ -499,6 +530,7 @@ function Generador() {
       const datos: GuardarMenuBackendRequest = {
         nombre: nombre.trim() || "Menú sin nombre",
         cantidad_dias: cantDias,
+        fecha_inicio: fechaInicio,
         comensales: 1,
         tamano_porcion: "NORMAL",
 
