@@ -1,8 +1,6 @@
 // Datos de ejemplo. Se reemplazarán por respuestas de la API FastAPI.
-import quinoa from "@/assets/receta-quinoa.jpg";
-import avena from "@/assets/receta-avena.jpg";
-import salmon from "@/assets/receta-salmon.jpg";
-import sopa from "@/assets/receta-sopa.jpg";
+import { obtenerImagenReceta } from "@/lib/imagenes-recetas";
+import sinImagen from "@/assets/recetas/sin-imagen.svg";
 import type { Alergia, CategoriaAlimento, Ingrediente, Receta, Menu } from "@/types";
 
 export const alergias: Alergia[] = [
@@ -49,7 +47,7 @@ export const recetas: Receta[] = [
   {
     id: 1, nombre: "Bowl de quinoa y garbanzos", tiempo_preparacion: 25, dificultad: "PRINCIPIANTE",
     info_nutricional: "520 kcal · 18 g proteína · 14 g fibra", activa: true,
-    tipos_comida: ["ALMUERZO", "CENA"], imagen: quinoa,
+    tipos_comida: ["ALMUERZO", "CENA"], imagen: sinImagen,
     pasos: "Cocinar la quinoa 15 minutos.\nEnjuagar los garbanzos.\nCortar tomates y palta.\nMezclar todo y condimentar con limón y oliva.",
     ingredientes: [
       { ingrediente_id: 1, cantidad: "1 taza" }, { ingrediente_id: 4, cantidad: "200 g" },
@@ -60,7 +58,7 @@ export const recetas: Receta[] = [
   {
     id: 2, nombre: "Avena cremosa con frutos rojos", tiempo_preparacion: 10, dificultad: "PRINCIPIANTE",
     info_nutricional: "380 kcal · 11 g proteína · 8 g fibra", activa: true,
-    tipos_comida: ["DESAYUNO", "MERIENDA"], imagen: avena,
+    tipos_comida: ["DESAYUNO", "MERIENDA"], imagen: sinImagen,
     pasos: "Calentar la leche.\nAgregar la avena y cocinar 5 minutos.\nServir con banana y arándanos.",
     ingredientes: [
       { ingrediente_id: 6, cantidad: "1/2 taza" }, { ingrediente_id: 8, cantidad: "250 ml", sustituto_id: 9 },
@@ -70,7 +68,7 @@ export const recetas: Receta[] = [
   {
     id: 3, nombre: "Salmón grillado con vegetales", tiempo_preparacion: 35, dificultad: "INTERMEDIO",
     info_nutricional: "610 kcal · 38 g proteína · 6 g fibra", activa: true,
-    tipos_comida: ["ALMUERZO", "CENA"], imagen: salmon,
+    tipos_comida: ["ALMUERZO", "CENA"], imagen: sinImagen,
     pasos: "Precalentar la plancha.\nSalpimentar el salmón.\nGrillar 4 minutos por lado.\nSaltear zucchini y espárragos.\nServir con limón.",
     ingredientes: [
       { ingrediente_id: 10, cantidad: "200 g", sustituto_id: 16 }, { ingrediente_id: 11, cantidad: "1 u" },
@@ -80,7 +78,7 @@ export const recetas: Receta[] = [
   {
     id: 4, nombre: "Crema de espinaca", tiempo_preparacion: 30, dificultad: "PRINCIPIANTE",
     info_nutricional: "290 kcal · 9 g proteína · 7 g fibra", activa: true,
-    tipos_comida: ["CENA", "ALMUERZO"], imagen: sopa,
+    tipos_comida: ["CENA", "ALMUERZO"], imagen: sinImagen,
     pasos: "Rehogar cebolla.\nAgregar espinaca y caldo.\nCocinar 15 minutos.\nProcesar y sumar la crema.",
     ingredientes: [
       { ingrediente_id: 13, cantidad: "400 g" }, { ingrediente_id: 14, cantidad: "100 ml", sustituto_id: 15 },
@@ -89,7 +87,7 @@ export const recetas: Receta[] = [
   {
     id: 5, nombre: "Ensalada tibia de lentejas", tiempo_preparacion: 40, dificultad: "INTERMEDIO",
     info_nutricional: "450 kcal · 22 g proteína · 16 g fibra", activa: true,
-    tipos_comida: ["ALMUERZO"], imagen: quinoa,
+    tipos_comida: ["ALMUERZO"], imagen: sinImagen,
     pasos: "Cocinar lentejas 25 minutos.\nSaltear vegetales.\nMezclar y sumar queso feta.",
     ingredientes: [
       { ingrediente_id: 18, cantidad: "1 taza" }, { ingrediente_id: 3, cantidad: "10 u" },
@@ -99,7 +97,7 @@ export const recetas: Receta[] = [
   {
     id: 6, nombre: "Porridge de banana y coco", tiempo_preparacion: 15, dificultad: "PRINCIPIANTE",
     info_nutricional: "410 kcal · 9 g proteína · 7 g fibra", activa: true,
-    tipos_comida: ["DESAYUNO"], imagen: avena,
+    tipos_comida: ["DESAYUNO"], imagen: sinImagen,
     pasos: "Cocinar la avena con leche de coco.\nPisar la banana e incorporar.\nServir tibio.",
     ingredientes: [
       { ingrediente_id: 6, cantidad: "1/2 taza" }, { ingrediente_id: 15, cantidad: "200 ml" },
@@ -109,7 +107,7 @@ export const recetas: Receta[] = [
   {
     id: 7, nombre: "Salmón en costra de hierbas", tiempo_preparacion: 50, dificultad: "AVANZADO",
     info_nutricional: "640 kcal · 40 g proteína · 4 g fibra", activa: true,
-    tipos_comida: ["CENA"], imagen: salmon,
+    tipos_comida: ["CENA"], imagen: sinImagen,
     pasos: "Preparar costra de hierbas.\nCubrir el salmón.\nHornear 18 minutos a 200 °C.\nAcompañar con espárragos.",
     ingredientes: [
       { ingrediente_id: 10, cantidad: "250 g" }, { ingrediente_id: 12, cantidad: "1 atado" },
@@ -118,7 +116,7 @@ export const recetas: Receta[] = [
   {
     id: 8, nombre: "Sopa verde de zucchini", tiempo_preparacion: 25, dificultad: "PRINCIPIANTE",
     info_nutricional: "240 kcal · 7 g proteína · 6 g fibra", activa: true,
-    tipos_comida: ["CENA", "MERIENDA"], imagen: sopa,
+    tipos_comida: ["CENA", "MERIENDA"], imagen: sinImagen,
     pasos: "Cortar zucchini y espinaca.\nHervir 15 minutos.\nProcesar y servir.",
     ingredientes: [{ ingrediente_id: 11, cantidad: "2 u" }, { ingrediente_id: 13, cantidad: "200 g" }],
   },

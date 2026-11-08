@@ -2,11 +2,9 @@
 // Configurar la URL en un archivo .env:  VITE_API_URL=http://localhost:8000
 // Mientras USE_MOCK sea true, las funciones devuelven datos de ejemplo.
 
+import { obtenerImagenReceta } from "@/lib/imagenes-recetas";
 import * as mock from "@/data/mock";
-import quinoa from "@/assets/receta-quinoa.jpg";
-import avena from "@/assets/receta-avena.jpg";
-import salmon from "@/assets/receta-salmon.jpg";
-import sopa from "@/assets/receta-sopa.jpg";
+
 import type {
   Cuenta,
   PerfilAlimentario,
@@ -17,7 +15,6 @@ import type {
   TipoComida,
 } from "@/types";
 
-export const IMAGENES_FALLBACK = [quinoa, avena, salmon, sopa];
 
 /**
  * Asegura que una receta proveniente del backend tenga todos los campos requeridos
@@ -25,11 +22,8 @@ export const IMAGENES_FALLBACK = [quinoa, avena, salmon, sopa];
  */
 export function normalizarReceta(
   r: Partial<Receta> & { id: number },
-  index = 0
+  _index = 0
 ): Receta {
-  const fallbackImg =
-    IMAGENES_FALLBACK[Math.abs(r.id || index) % IMAGENES_FALLBACK.length] ?? quinoa;
-
   return {
     id: Number(r.id),
     nombre: r.nombre || "Receta sin nombre",
@@ -42,7 +36,9 @@ export function normalizarReceta(
     tipos_comida: Array.isArray(r.tipos_comida) ? r.tipos_comida : [],
     ingredientes: Array.isArray(r.ingredientes) ? r.ingredientes : [],
     imagen:
-      r.imagen && r.imagen.trim().length > 0 ? r.imagen : fallbackImg,
+      r.imagen && r.imagen.trim().length > 0
+        ? r.imagen
+        : obtenerImagenReceta(r.nombre),
   };
 }
 
@@ -469,6 +465,7 @@ export interface PropuestaMenuResponse {
 export interface GuardarMenuBackendRequest {
   nombre: string;
   cantidad_dias: number;
+  fecha_inicio: string;
   comensales: number;
   tamano_porcion: "NORMAL";
 
@@ -494,6 +491,7 @@ export interface MenuGuardadoResumen {
   id: number;
   nombre: string;
   cantidad_dias: number;
+  fecha_inicio: string | null;
   comensales: number;
   tamano_porcion: string;
   fecha_creacion: string;
