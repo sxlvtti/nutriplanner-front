@@ -1,6 +1,15 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { AlertCircle, ArrowLeft, Ban, Clock, Heart, RotateCcw, WifiOff } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  Ban,
+  Check,
+  Clock,
+  Heart,
+  RotateCcw,
+  WifiOff,
+} from "lucide-react";
 import { AppLayout } from "@/components/np/AppLayout";
 import { Badge, Button, Card, comidaTexto, nivelTexto } from "@/components/np/ui";
 import { recetas as mockRecetas } from "@/data/mock";
@@ -34,6 +43,20 @@ export const Route = createFileRoute("/recetas/$id")({
   component: Detalle,
 });
 
+/**
+ * Separa el texto de preparación en pasos.
+ * Cada paso termina con un punto seguido de espacio (o fin de texto).
+ * El punto sirve solo como separador: no se muestra en pantalla.
+ * Los decimales (ej: 1.5) no se cortan porque el punto no va seguido de espacio.
+ * También respeta saltos de línea por compatibilidad con recetas viejas.
+ */
+function separarPasos(texto: string): string[] {
+  return texto
+    .split(/\n+|\.(?:\s+|$)/)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0);
+}
+
 function Detalle() {
   const { id } = Route.useParams();
 
@@ -65,6 +88,9 @@ function Detalle() {
 
   const [ingredientesCatalogo, setIngredientesCatalogo] =
     useState<Ingrediente[]>([]);
+
+  // Índices de los pasos que el usuario marcó como terminados.
+  const [pasosHechos, setPasosHechos] = useState<Set<number>>(new Set());
 
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -126,10 +152,27 @@ function Detalle() {
     void cargar();
   }, [cargar]);
 
+  // Al cambiar de receta se reinicia el progreso de los pasos.
+  useEffect(() => {
+    setPasosHechos(new Set());
+  }, [id]);
+
   const resolverNombre = (ingId: number) => {
     const item = ingredientesCatalogo.find((i) => i.id === ingId);
     if (item) return item.nombre;
     return nombreIngrediente(ingId);
+  };
+
+  const alternarPaso = (indice: number) => {
+    setPasosHechos((anteriores) => {
+      const nuevos = new Set(anteriores);
+      if (nuevos.has(indice)) {
+        nuevos.delete(indice);
+      } else {
+        nuevos.add(indice);
+      }
+      return nuevos;
+    });
   };
 
 
@@ -212,6 +255,10 @@ function Detalle() {
     }
   };
 
+  const pasos = r ? separarPasos(r.pasos ?? "") : [];
+  const totalPasos = pasos.length;
+  const hechos = pasosHechos.size;
+  const progreso = totalPasos > 0 ? Math.round((hechos / totalPasos) * 100) : 0;
 
   return (
     <AppLayout>
@@ -300,14 +347,18 @@ function Detalle() {
           <p className="text-muted-foreground">Receta no disponible.</p>
         </div>
       ) : (
-        <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr]">
-          <img
-            src={r.imagen}
-            alt={r.nombre}
-            width={1024}
-            height={768}
-            className="aspect-[4/3] w-full rounded-3xl object-cover shadow-card"
-          />
+        <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr] lg:items-stretch">
+          {/* IMAGEN: ocupa toda la altura de la columna derecha */}
+          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl shadow-card lg:aspect-auto lg:min-h-[320px]">
+            <img
+              src={r.imagen}
+              alt={r.nombre}
+              width={1024}
+              height={768}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          </div>
+
           <div>
             <div className="flex flex-wrap gap-1.5">
               {r.tipos_comida.map((t) => (
@@ -333,9 +384,8 @@ function Detalle() {
                 className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm hover:bg-primary-soft transition"
               >
                 <Heart
-                  className={`h-4 w-4 ${
-                    favoritas.includes(r.id) ? "fill-current text-primary" : ""
-                  }`}
+                  className={`h-4 w-4 ${favoritas.includes(r.id) ? "fill-current text-primary" : ""
+                    }`}
                 />
                 {favoritas.includes(r.id)
                   ? "Quitar de favoritos"
@@ -348,9 +398,8 @@ function Detalle() {
                 className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm hover:bg-secondary transition"
               >
                 <Ban
-                  className={`h-4 w-4 ${
-                    excluidas.includes(r.id) ? "text-destructive" : ""
-                  }`}
+                  className={`h-4 w-4 ${excluidas.includes(r.id) ? "text-destructive" : ""
+                    }`}
                 />
                 {excluidas.includes(r.id)
                   ? "Quitar exclusión"
@@ -387,11 +436,15 @@ function Detalle() {
             )}
 
             <Card className="mt-6">
-              <h2 className="mb-3 text-xl font-semibold">
-                Ingredientes
-              </h2>
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h2 className="text-xl font-semibold">Ingredientes</h2>
+                <span className="rounded-full bg-primary-soft px-3 py-1 text-xs font-semibold text-primary">
+                  {r.ingredientes.length}{" "}
+                  {r.ingredientes.length === 1 ? "ingrediente" : "ingredientes"}
+                </span>
+              </div>
 
-              <ul className="divide-y">
+              <ul className="space-y-2">
                 {r.ingredientes.map((ri) => {
                   // Buscar si FastAPI marcó este ingrediente
                   // como restringido.
@@ -406,20 +459,26 @@ function Detalle() {
                     restriccion?.alternativas_validas ?? [];
 
                   return (
-                    <li key={ri.ingrediente_id} className="py-3 text-sm">
+                    <li
+                      key={ri.ingrediente_id}
+                      className={`rounded-xl border px-4 py-3 text-sm transition ${restringido
+                        ? "border-destructive/30 bg-destructive/5"
+                        : "border-transparent bg-secondary/40 hover:bg-secondary/70"
+                        }`}
+                    >
                       <div className="flex items-center justify-between gap-3">
                         <span
                           className={
                             restringido
-                              ? "text-destructive font-medium"
-                              : ""
+                              ? "font-medium text-destructive"
+                              : "font-medium"
                           }
                         >
                           {resolverNombre(ri.ingrediente_id)}
                         </span>
 
-                        <span className="text-muted-foreground">
-                          {ri.cantidad}
+                        <span className="shrink-0 rounded-full bg-card px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm">
+                          {ri.cantidad} {ri.unidad}
                         </span>
                       </div>
 
@@ -431,8 +490,6 @@ function Detalle() {
                                 Ingrediente restringido.
                                 Alternativas disponibles:
                               </p>
-
-
 
                               <fieldset className="mt-3">
                                 <legend className="mb-2 text-xs font-semibold">
@@ -451,7 +508,7 @@ function Detalle() {
                                         value={alt.id}
                                         checked={
                                           selecciones[
-                                            restriccion.receta_ingrediente_id
+                                          restriccion.receta_ingrediente_id
                                           ] === alt.id
                                         }
                                         disabled={guardandoId !== null}
@@ -475,7 +532,6 @@ function Detalle() {
                                 </div>
                               </fieldset>
 
-
                               <div className="mt-3 flex flex-wrap gap-2">
                                 <Button
                                   type="button"
@@ -483,16 +539,16 @@ function Detalle() {
                                   disabled={
                                     guardandoId !== null ||
                                     selecciones[
-                                      restriccion.receta_ingrediente_id
+                                    restriccion.receta_ingrediente_id
                                     ] === undefined ||
                                     sustitucionesGuardadas.some(
                                       (item) =>
                                         item.receta_ingrediente_id ===
-                                          restriccion.receta_ingrediente_id &&
+                                        restriccion.receta_ingrediente_id &&
                                         item.alternativa_id ===
-                                          selecciones[
-                                            restriccion.receta_ingrediente_id
-                                          ]
+                                        selecciones[
+                                        restriccion.receta_ingrediente_id
+                                        ]
                                     )
                                   }
                                   onClick={() =>
@@ -502,7 +558,7 @@ function Detalle() {
                                   }
                                 >
                                   {guardandoId ===
-                                  restriccion.receta_ingrediente_id
+                                    restriccion.receta_ingrediente_id
                                     ? "Guardando..."
                                     : "Guardar sustitución"}
                                 </Button>
@@ -512,25 +568,24 @@ function Detalle() {
                                     item.receta_ingrediente_id ===
                                     restriccion.receta_ingrediente_id
                                 ) && (
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="outline"
-                                    disabled={guardandoId !== null}
-                                    onClick={() =>
-                                      void eliminarSustitucion(
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="outline"
+                                      disabled={guardandoId !== null}
+                                      onClick={() =>
+                                        void eliminarSustitucion(
+                                          restriccion.receta_ingrediente_id
+                                        )
+                                      }
+                                    >
+                                      {guardandoId ===
                                         restriccion.receta_ingrediente_id
-                                      )
-                                    }
-                                  >
-                                    {guardandoId ===
-                                    restriccion.receta_ingrediente_id
-                                      ? "Procesando..."
-                                      : "Quitar sustitución"}
-                                  </Button>
-                                )}
+                                        ? "Procesando..."
+                                        : "Quitar sustitución"}
+                                    </Button>
+                                  )}
                               </div>
-
 
                               {sustitucionesGuardadas
                                 .filter(
@@ -552,8 +607,6 @@ function Detalle() {
                                   {errorSustitucion}
                                 </p>
                               )}
-
-
                             </div>
                           ) : (
                             <p className="text-xs text-destructive">
@@ -570,22 +623,92 @@ function Detalle() {
             </Card>
           </div>
 
+          {/* PREPARACIÓN: cada paso se puede marcar como terminado */}
           <Card className="lg:col-span-2">
-            <h2 className="mb-4 text-xl font-semibold">Preparación</h2>
-            {r.pasos.trim() ? (
-              <ol className="space-y-3">
-                {r.pasos
-                  .split("\n")
-                  .filter((p) => p.trim().length > 0)
-                  .map((p, i) => (
-                    <li key={i} className="flex gap-3">
-                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                        {i + 1}
-                      </span>
-                      <span className="pt-0.5">{p}</span>
-                    </li>
-                  ))}
-              </ol>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-xl font-semibold">Preparación</h2>
+
+              {totalPasos > 0 && (
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-semibold text-muted-foreground">
+                    {hechos} de {totalPasos}{" "}
+                    {totalPasos === 1 ? "paso" : "pasos"}
+                  </span>
+                  {hechos > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setPasosHechos(new Set())}
+                      className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      Reiniciar
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {totalPasos > 0 ? (
+              <>
+                <div
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={progreso}
+                  className="mb-5 h-1.5 w-full overflow-hidden rounded-full bg-secondary"
+                >
+                  <div
+                    className="h-full rounded-full bg-green-500 transition-all duration-300"
+                    style={{ width: `${progreso}%` }}
+                  />
+                </div>
+
+                <ol className="space-y-2.5">
+                  {pasos.map((p, i) => {
+                    const hecho = pasosHechos.has(i);
+
+                    return (
+                      <li key={i}>
+                        <button
+                          type="button"
+                          aria-pressed={hecho}
+                          onClick={() => alternarPaso(i)}
+                          className={`flex w-full items-center gap-4 rounded-xl border px-4 py-3 text-left text-sm transition ${hecho
+                            ? "border-green-200 bg-green-50 text-green-800"
+                            : "border-transparent bg-secondary/40 hover:bg-secondary/70"
+                            }`}
+                        >
+                          <span
+                            className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold transition ${hecho
+                              ? "bg-green-500 text-white"
+                              : "bg-primary text-primary-foreground"
+                              }`}
+                          >
+                            {hecho ? (
+                              <Check className="h-4 w-4" strokeWidth={3} />
+                            ) : (
+                              i + 1
+                            )}
+                          </span>
+
+                          <span
+                            className={`flex-1 leading-relaxed ${hecho ? "line-through decoration-green-400/70" : ""
+                              }`}
+                          >
+                            {p}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ol>
+
+                {hechos === totalPasos && (
+                  <p className="mt-4 rounded-xl bg-green-50 px-4 py-3 text-center text-sm font-medium text-green-800">
+                    ¡Receta terminada! Que la disfrutes.
+                  </p>
+                )}
+              </>
             ) : (
               <p className="text-sm text-muted-foreground">
                 No hay pasos de preparación especificados para esta receta.

@@ -31,6 +31,7 @@ export interface Ingrediente {
 export interface RecetaIngrediente {
   ingrediente_id: number;
   cantidad: string;
+  unidad?: string;
   /** Ingrediente alternativo explícito (sustitución). */
   sustituto_id?: number;
 }
