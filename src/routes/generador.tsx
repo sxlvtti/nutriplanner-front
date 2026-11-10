@@ -133,7 +133,7 @@ function Generador() {
         !confirmadas.some(
           (seleccion) =>
             seleccion.ingrediente_original_id ===
-              ingrediente.ingrediente_id &&
+            ingrediente.ingrediente_id &&
             ingrediente.alternativas_validas.some(
               (alternativa) =>
                 alternativa.ingrediente_id ===
@@ -309,16 +309,16 @@ function Generador() {
       menu.map((d) =>
         d.dia === dia
           ? {
-              ...d,
-              comidas: {
-                ...d.comidas,
-                [tipo]: nueva.id,
-              },
-              sustituciones: {
-                ...d.sustituciones,
-                [tipo]: [],
-              },
-            }
+            ...d,
+            comidas: {
+              ...d.comidas,
+              [tipo]: nueva.id,
+            },
+            sustituciones: {
+              ...d.sustituciones,
+              [tipo]: [],
+            },
+          }
           : d
       )
     );
@@ -391,15 +391,15 @@ function Generador() {
   // CONTAR SUSTITUCIONES PENDIENTES
   const pendientes = menu
     ? menu.reduce(
-        (total, dia) =>
-          total +
-          comidas.reduce(
-            (subtotal, tipo) =>
-              subtotal + ingredientesPendientes(dia, tipo).length,
-            0
-          ),
-        0
-      )
+      (total, dia) =>
+        total +
+        comidas.reduce(
+          (subtotal, tipo) =>
+            subtotal + ingredientesPendientes(dia, tipo).length,
+          0
+        ),
+      0
+    )
     : 0;
 
   const haySustitucionesAPI = Object.values(alertasAPI).some(
@@ -408,8 +408,8 @@ function Generador() {
 
   const faltanRecetas = menu
     ? menu.some((dia) =>
-        comidas.some((tipo) => dia.comidas[tipo] == null)
-      )
+      comidas.some((tipo) => dia.comidas[tipo] == null)
+    )
     : false;
 
 
@@ -638,13 +638,13 @@ function Generador() {
                 {menu ? (
                   <RefreshCw className="h-4 w-4" />
                 ) : (
-                  <Sparkles className="h-4 w-4" />
+                  ""
                 )}
                 {generando
                   ? "Generando..."
                   : menu
-                  ? "Volver a generar"
-                  : "Generar menú"}
+                    ? "Volver a generar"
+                    : "Generar menú"}
               </Button>
             </div>
           </div>
@@ -942,7 +942,7 @@ function Generador() {
         sustitucionesConfirmadas={
           previewReceta
             ? menu?.find((d) => d.dia === previewReceta.dia)
-                ?.sustituciones?.[previewReceta.tipo] ?? []
+              ?.sustituciones?.[previewReceta.tipo] ?? []
             : []
         }
         onConfirmarSustitucion={confirmarSustitucion}
