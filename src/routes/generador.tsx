@@ -90,7 +90,6 @@ function Generador() {
     Record<number, CompatibilidadRecetaResponse>
   >({});
   const [alertasAPI, setAlertasAPI] = useState<
-
     Record<
       string,
       {
@@ -112,8 +111,7 @@ function Generador() {
         !excluidas.includes(r.id)
     );
 
-
-  // INGREDIENTES PENDIENTES SEGÚN FASTAPI
+  // INGREDIENTES PENDIENTES DE SUSTITUCIÓN
   const ingredientesPendientes = (
     dia: Menu["dias"][number],
     tipo: TipoComida
@@ -143,7 +141,7 @@ function Generador() {
     );
   };
 
-  // GENERAR MENÚ CON FASTAPI
+  // GENERAR MENÚ
   const generar = async () => {
     if (comidas.length === 0 || generando) return;
 
@@ -165,7 +163,7 @@ function Generador() {
         String(hoy.getDate()).padStart(2, "0"),
       ].join("-");
 
-      // 1. Solicitar el menú al backend
+      // 1. Solicitar el menú
       const propuesta = await api.generarMenu({
         cantidad_dias: cantDias,
         tipos_comida: comidas,
@@ -173,7 +171,7 @@ function Generador() {
         tamano_porcion: "NORMAL",
       });
 
-      // 2. Obtener recetas e ingredientes reales desde FastAPI
+      // 2. Obtener recetas e ingredientes
       const [catalogo, catalogoIngredientes] = await Promise.all([
         api.getRecetas(),
         api.getIngredientes(),
@@ -199,7 +197,6 @@ function Generador() {
 
       setRecetas([...catalogo, ...recetasAdicionales]);
 
-
       const resultadosCompatibilidad = await Promise.all(
         idsRecetas.map(async (id) => ({
           id,
@@ -217,7 +214,6 @@ function Generador() {
       });
 
       setCompatibilidades(mapaCompatibilidades);
-
 
       // 3. Adaptar la respuesta al formato del frontend
       const primerDia = propuesta.comidas.length > 0
@@ -246,7 +242,7 @@ function Generador() {
         }
       );
 
-      // 4. Registrar las advertencias del backend
+      // 4. Registrar las advertencias
       const nuevasAlertas: typeof alertasAPI = {};
 
       propuesta.comidas.forEach((comida) => {
@@ -267,7 +263,7 @@ function Generador() {
       // 5. Mostrar advertencias cuando corresponda
       if (!propuesta.estructura_completa) {
         setAviso(
-          "El backend no pudo completar todas las comidas solicitadas."
+          "No se pudieron completar todas las comidas. Probá generar de nuevo."
         );
       } else if (
         Object.values(nuevasAlertas).some(
@@ -275,7 +271,7 @@ function Generador() {
         )
       ) {
         setAviso(
-          "El menú fue generado, pero algunas comidas requieren sustituciones pendientes de validación."
+          "Menú generado. Algunas comidas necesitan que elijas sustituciones."
         );
       }
     } catch (error) {
@@ -300,7 +296,7 @@ function Generador() {
 
     if (!nueva) {
       setAviso(
-        `No hay recetas compatibles para reemplazar el ${comidaTexto[tipo].toLowerCase()}.`
+        `No hay otras recetas aptas para el ${comidaTexto[tipo].toLowerCase()}.`
       );
       return;
     }
@@ -323,13 +319,10 @@ function Generador() {
       )
     );
 
-    // El reemplazo fue elegido localmente; no está validado por FastAPI.
+    // El reemplazo fue elegido localmente; todavía no fue validado.
     setCambiosLocalesSinValidar(true);
-    setAviso(
-      "El reemplazo es provisional. Falta validar la receta con el backend antes de guardar."
-    );
+    setAviso("Receta reemplazada. Se verificará al guardar el menú.");
   };
-
 
   // CONFIRMAR SUSTITUCIÓN PARA UNA COMIDA ESPECÍFICA
   const confirmarSustitucion = (
@@ -381,12 +374,8 @@ function Generador() {
       }) ?? null
     );
 
-    setAviso(
-      "Sustitución seleccionada. FastAPI verificará " +
-      "su validez cuando guardes el menú."
-    );
+    setAviso("Sustitución elegida. Se verificará al guardar el menú.");
   };
-
 
   // CONTAR SUSTITUCIONES PENDIENTES
   const pendientes = menu
@@ -412,8 +401,7 @@ function Generador() {
     )
     : false;
 
-
-  // GUARDAR MENÚ Y SUS SUSTITUCIONES EN FASTAPI
+  // GUARDAR MENÚ Y SUS SUSTITUCIONES
   const guardar = async () => {
     if (!menu || !fechaInicio || faltanRecetas || guardando) {
       return;
@@ -426,8 +414,8 @@ function Generador() {
     if (
       hayConflictoFlexible &&
       !window.confirm(
-        "El menú contiene conflictos alimentarios flexibles. " +
-        "¿Confirmás que querés guardar estas recetas?"
+        "Algunas recetas tienen ingredientes que podrían no ir con tus preferencias. " +
+        "¿Querés guardar el menú igual?"
       )
     ) {
       return;
@@ -448,7 +436,7 @@ function Generador() {
               );
             }
 
-            // Consultar los identificadores reales del backend.
+            // Consultar los identificadores reales de cada receta.
             const compatibilidad =
               await api.getCompatibilidadReceta(recetaId);
 
@@ -507,8 +495,8 @@ function Generador() {
 
             if (pendiente) {
               throw new Error(
-                `Falta confirmar una sustitución de ` +
-                `${pendiente.nombre} para ${dia.dia}, ` +
+                `Falta elegir una sustitución para ` +
+                `${pendiente.nombre} en ${dia.dia}, ` +
                 `${comidaTexto[tipo]}.`
               );
             }
@@ -554,7 +542,6 @@ function Generador() {
       setGuardando(false);
     }
   };
-
 
   return (
     <AppLayout>
@@ -785,11 +772,10 @@ function Generador() {
                                     {alertaAPI?.conflictoFlexible && (
                                       <p className="mb-2 rounded-xl border border-warning/30 bg-warning/5 p-2.5 text-xs text-warning">
                                         <AlertTriangle className="mr-1 inline h-3.5 w-3.5" />
-                                        Esta receta tiene un conflicto alimentario flexible
-                                        señalado por FastAPI. Revisá tu preferencia.
+                                        Esta receta tiene un ingrediente que podría no ir
+                                        con tus preferencias. Revisala antes de guardar.
                                       </p>
                                     )}
-
 
                                     {pendientesComida.length > 0 ? (
                                       <div className="space-y-2 rounded-xl border border-warning/30 bg-warning/5 p-2.5">
@@ -799,8 +785,8 @@ function Generador() {
                                         </p>
 
                                         <p className="text-xs text-muted-foreground">
-                                          Revisá los ingredientes y confirmá
-                                          las alternativas disponibles.
+                                          Elegí una alternativa para cada
+                                          ingrediente marcado.
                                         </p>
 
                                         <button
@@ -826,7 +812,6 @@ function Generador() {
                                   </div>
 
                                   <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border/50 pt-3">
-
                                     <button
                                       type="button"
                                       onClick={() =>
@@ -875,23 +860,21 @@ function Generador() {
                   <p className="flex items-center gap-2 text-sm text-warning">
                     <AlertTriangle className="h-4 w-4 shrink-0" />
                     Tenés {pendientes} sustitución(es) pendiente(s).
-                    Confirmalas antes de guardar el menú.
+                    Elegilas antes de guardar el menú.
                   </p>
                 )}
 
                 {faltanRecetas && (
                   <p className="flex items-center gap-2 text-sm text-warning">
                     <AlertTriangle className="h-4 w-4 shrink-0" />
-                    El menú tiene comidas sin receta asignada.
+                    Hay comidas sin receta asignada.
                   </p>
                 )}
 
                 {(haySustitucionesAPI || cambiosLocalesSinValidar) && (
                   <p className="flex items-center gap-2 text-sm text-warning">
                     <AlertTriangle className="h-4 w-4 shrink-0" />
-                    Hay sustituciones o reemplazos sin validar en FastAPI.
-                    FastAPI validará las sustituciones y los
-                    reemplazos cuando presiones Guardar menú.
+                    Hay cambios sin verificar. Se revisarán al guardar el menú.
                   </p>
                 )}
 
@@ -914,8 +897,6 @@ function Generador() {
                     />
                   </div>
 
-
-
                   <Button
                     onClick={guardar}
                     disabled={faltanRecetas || guardando}
@@ -924,7 +905,6 @@ function Generador() {
                     <Save className="h-4 w-4" />
                     {guardando ? "Guardando..." : "Guardar menú"}
                   </Button>
-
                 </div>
               </Card>
             </>
